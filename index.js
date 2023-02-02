@@ -214,13 +214,14 @@ app.post("/addStudent", (req, res) => {
   const middlename = req.body.middlename;
   const lastname = req.body.lastname;
   const gender = req.body.gender;
+  const teacherId = req.body.teacherId
 
   let sql =
-    "INSERT INTO students (student_id, firstname, middlename, lastname,gender, course, year, section) VALUES(?,?,?,?,?,?,?,?)";
+    "INSERT INTO students (student_id, firstname, middlename, lastname,gender, course, year, section, teacher) VALUES(?,?,?,?,?,?,?,?,?)";
 
   DB_CONN.query(
     sql,
-    [id, firstname, middlename, lastname, gender, course, year, section],
+    [id, firstname, middlename, lastname, gender, course, year, section, teacherId],
     (err, result) => {
       if (err) {
         console.log(err);
@@ -236,10 +237,10 @@ app.post("/addStudent", (req, res) => {
 });
 app.post("/getStudents", (req, res) => {
   const classId = req.body.classId;
-
+  const teacherId = req.body.teacherId
   const sql =
-    "SELECT students.* FROM students INNER JOIN classes ON classes.student_id = students.student_id WHERE classes.course_number = ?";
-  DB_CONN.query(sql, classId, (err, result) => {
+    "SELECT students.* FROM students INNER JOIN classes ON classes.student_id = students.student_id WHERE classes.course_number = ? AND students.teacher = ?";
+  DB_CONN.query(sql, [classId,teacherId], (err, result) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
@@ -250,9 +251,10 @@ app.post("/getStudents", (req, res) => {
 });
 app.post("/getAllStudents", (req, res) => {
   const classId = req.body.classId;
+  const teacherId = req.body.teacherId
 
-  const sql = "SELECT * FROM students";
-  DB_CONN.query(sql, (err, result) => {
+  const sql = "SELECT * FROM students WHERE teacher = ?";
+  DB_CONN.query(sql,teacherId, (err, result) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
@@ -261,12 +263,29 @@ app.post("/getAllStudents", (req, res) => {
     res.send(result);
   });
 });
-app.get("/searchStudent/:toSearch", (req, res) => {
+app.get("/searchStudent/:toSearch/:teacherId", (req, res) => {
   const toSearch = "%" + req.params.toSearch + "%";
+  const teacher = req.params.teacherId
 
   const sql =
-    'SELECT CONCAT(firstname , " ", middlename, " ", lastname )as fullname, student_id, course, year, section FROM `students` WHERE CONCAT(firstname , " ", middlename, " ", lastname) LIKE ?';
-  DB_CONN.query(sql, toSearch, (err, result) => {
+    'SELECT firstname , middlename, lastname, student_id, course, year, section FROM `students` WHERE CONCAT(firstname , " ", middlename, " ", lastname) LIKE ? and teacher = ?';
+  DB_CONN.query(sql, [toSearch, teacher], (err, result) => {
+    if (err) {
+      console.log(err);
+      res.sendStatus(500);
+    }
+    console.log(result);
+    res.send(result);
+  });
+});
+app.get("/filterStudents/:course/:yearSection/:teacherId", (req, res) => {
+  const course = req.params.course;
+  const yearSection = req.params.yearSection
+  const teacher = req.params.teacherId
+
+  const sql =
+    'SELECT firstname , middlename, lastname, student_id, course, year, section FROM `students` WHERE course = ? and CONCAT(year,"-",section) = ? and teacher = ?';
+  DB_CONN.query(sql, [course,yearSection, teacher], (err, result) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
