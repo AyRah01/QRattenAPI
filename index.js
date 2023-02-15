@@ -216,14 +216,16 @@ app.post("/addStudent", (req, res) => {
   const lastname = req.body.lastname;
   const gender = req.body.gender;
   const teacherId = req.body.teacherId;
+  const studentType = req.body.studentType
 
   let sql =
-    "INSERT INTO students (student_id, firstname, middlename, lastname,gender, course, year, section, teacher) VALUES(?,?,?,?,?,?,?,?,?)";
+    "INSERT INTO students (student_id, type, firstname, middlename, lastname,gender, course, year, section, teacher) VALUES(?,?,?,?,?,?,?,?,?,?)";
 
   DB_CONN.query(
     sql,
     [
       id,
+      studentType,  
       firstname,
       middlename,
       lastname,
@@ -335,7 +337,7 @@ app.get("/searchStudent/:toSearch/:teacherId", (req, res) => {
   const teacher = req.params.teacherId;
 
   const sql =
-    'SELECT firstname , middlename, lastname, student_id, course, year, section, id FROM `students` WHERE CONCAT(firstname , " ", middlename, " ", lastname) LIKE ? and teacher = ?';
+    'SELECT firstname, middlename, lastname,gender, type,student_id, course, year, section, id FROM `students` WHERE CONCAT(firstname , " ", middlename, " ", lastname) LIKE ? and teacher = ?';
   DB_CONN.query(sql, [toSearch, teacher], (err, result) => {
     if (err) {
       console.log(err);
@@ -345,20 +347,21 @@ app.get("/searchStudent/:toSearch/:teacherId", (req, res) => {
     res.send(result);
   });
 });
-app.get("/filterStudents/:course/:yearSection/:teacherId", (req, res) => {
+app.get("/filterStudents/:type/:course/:yearSection/:teacherId", (req, res) => {
   const course = req.params.course;
   const yearSection = req.params.yearSection;
   const teacher = req.params.teacherId;
+  const type = req.params.type
 
   console.log(yearSection);
   let sql =
-    "SELECT firstname , middlename, lastname, student_id, course, year, section,id FROM `students` WHERE teacher = ?";
+    "SELECT firstname , middlename, type,gender, lastname, student_id, course, year, section,id FROM `students` WHERE teacher = ? AND type = ?";
   if (course !== "all") sql += "AND course = ?";
   if (yearSection !== "all") sql += "AND CONCAT(year,'-',section) = ?";
 
   sql += " ORDER BY firstname";
 
-  DB_CONN.query(sql, [teacher, course, yearSection], (err, result) => {
+  DB_CONN.query(sql, [teacher, type, course, yearSection], (err, result) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
@@ -591,6 +594,33 @@ app.post("/studentAttendanceDetails", (req, res) => {
     res.send(result);
   });
 });
+
+
+app.post("/changePassword",(req, res)=>{
+  const currentPassword = req.body.currentPassword
+  const newPassword = req.body.newPassword
+  const accountId = req.body.accountId
+
+  console.log("Request body",req.body)
+  const sql = "UPDATE instructors SET password=? WHERE email=? AND password = ?"
+
+  DB_CONN.query(sql,[newPassword, accountId, currentPassword],(err, result)=>{
+    if(err){
+      console.log(err)
+      return res.sendStatus(500)
+    }
+    console.log(result)
+    if(result.affectedRows){
+      return res.send({
+        success:true,
+      })
+    }else{
+      res.send({
+        succes:false
+      })
+    }
+  })
+})
 app.listen(PORT, () => {
   console.log("Server is running in port" + PORT);
 });
