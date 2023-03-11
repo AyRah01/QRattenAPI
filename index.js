@@ -216,7 +216,7 @@ app.post("/addStudent", (req, res) => {
   const lastname = req.body.lastname;
   const gender = req.body.gender;
   const teacherId = req.body.teacherId;
-  const studentType = req.body.studentType
+  const studentType = req.body.studentType;
 
   let sql =
     "INSERT INTO students (student_id, type, firstname, middlename, lastname,gender, course, year, section, teacher) VALUES(?,?,?,?,?,?,?,?,?,?)";
@@ -225,7 +225,7 @@ app.post("/addStudent", (req, res) => {
     sql,
     [
       id,
-      studentType,  
+      studentType,
       firstname,
       middlename,
       lastname,
@@ -351,7 +351,7 @@ app.get("/filterStudents/:type/:course/:yearSection/:teacherId", (req, res) => {
   const course = req.params.course;
   const yearSection = req.params.yearSection;
   const teacher = req.params.teacherId;
-  const type = req.params.type
+  const type = req.params.type;
 
   console.log(yearSection);
   let sql =
@@ -396,6 +396,34 @@ app.post("/enroll", (req, res) => {
     });
   });
 });
+app.post("/enrollAll", (req, res) => {
+  const students = req.body.students;
+  const classId = req.body.classId;
+
+  for (let i = 0; i < students.length; i++) {
+    const studentId = students[i].student_id;
+
+    const checkEnrolled =
+      "SELECT * FROM classes WHERE course_number = ? AND student_id = ?";
+    DB_CONN.query(checkEnrolled, [classId, studentId], (err, result) => {
+      if (err) {
+        console.log(err);
+      }
+      if (result.length === 0) {
+        const sql = "INSERT INTO classes(course_number, student_id) VALUES(?,?)";
+
+      DB_CONN.query(sql, [classId, studentId], (err1, result1) => {
+        if (err1) {
+          console.log(err1);
+        }
+        console.log(result1);
+      });
+      }  
+    });
+  }
+  return res.send({ success: true });
+
+});
 app.post("/checkAttendace", (req, res) => {
   const studentId = req.body.id;
   const classId = req.body.classId;
@@ -414,7 +442,7 @@ app.post("/checkAttendace", (req, res) => {
 
   const dateNow = new Date();
   const dateString = formatDate(dateNow);
-  const timeNow = Date.now()
+  const timeNow = Date.now();
 
   console.log(dateString);
 
@@ -580,9 +608,9 @@ app.post("/classAttendanceDetails", (req, res) => {
 });
 app.post("/studentAttendanceDetails", (req, res) => {
   const classId = req.body.classId;
-  const student_id = req.body.studendId
+  const student_id = req.body.studendId;
 
-  console.log(req.body)
+  console.log(req.body);
   const sql =
     "SELECT date_format(date, '%Y-%m-%d') as date, IFNULL(date_format(attendance.time_in, '%h:%m'),'') as time_in, present FROM attendance WHERE course_id = ? AND student_id = ? ORDER BY date";
   DB_CONN.query(sql, [classId, student_id], (err, result) => {
@@ -590,37 +618,41 @@ app.post("/studentAttendanceDetails", (req, res) => {
       console.log(err);
       return res.send({ success: false, msg: "Database Error" });
     }
-    console.log("Student list",result, classId, student_id);
+    console.log("Student list", result, classId, student_id);
     res.send(result);
   });
 });
 
+app.post("/changePassword", (req, res) => {
+  const currentPassword = req.body.currentPassword;
+  const newPassword = req.body.newPassword;
+  const accountId = req.body.accountId;
 
-app.post("/changePassword",(req, res)=>{
-  const currentPassword = req.body.currentPassword
-  const newPassword = req.body.newPassword
-  const accountId = req.body.accountId
+  console.log("Request body", req.body);
+  const sql =
+    "UPDATE instructors SET password=? WHERE email=? AND password = ?";
 
-  console.log("Request body",req.body)
-  const sql = "UPDATE instructors SET password=? WHERE email=? AND password = ?"
-
-  DB_CONN.query(sql,[newPassword, accountId, currentPassword],(err, result)=>{
-    if(err){
-      console.log(err)
-      return res.sendStatus(500)
+  DB_CONN.query(
+    sql,
+    [newPassword, accountId, currentPassword],
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        return res.sendStatus(500);
+      }
+      console.log(result);
+      if (result.affectedRows) {
+        return res.send({
+          success: true,
+        });
+      } else {
+        res.send({
+          succes: false,
+        });
+      }
     }
-    console.log(result)
-    if(result.affectedRows){
-      return res.send({
-        success:true,
-      })
-    }else{
-      res.send({
-        succes:false
-      })
-    }
-  })
-})
+  );
+});
 app.listen(PORT, () => {
   console.log("Server is running in port" + PORT);
 });
