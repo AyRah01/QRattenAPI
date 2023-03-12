@@ -596,7 +596,7 @@ app.post("/classAttendanceDetails", (req, res) => {
   const yearSection = req.body.yearSection;
   console.log(classId);
   const sql =
-    "SELECT students.*, date_format(attendance.date,'%Y-%m-%d') as date,IFNULL(date_format(attendance.time_in, '%h:%m'),'') as time_in, attendance.present FROM students INNER JOIN attendance ON students.student_id = attendance.student_id WHERE date_format(attendance.date, '%m-%d-%Y') = ? AND course_id = ? AND CONCAT(students.course , ' ', students.year, ' ', students.section ) = ? ORDER BY students.firstname";
+    "SELECT students.*, date_format(attendance.date,'%Y-%m-%d') as date,IFNULL(date_format(attendance.time_in, '%h:%i'),'') as time_in, attendance.present FROM students INNER JOIN attendance ON students.student_id = attendance.student_id WHERE date_format(attendance.date, '%m-%d-%Y') = ? AND course_id = ? AND CONCAT(students.course , ' ', students.year, ' ', students.section ) = ? ORDER BY students.firstname";
   DB_CONN.query(sql, [date, classId, yearSection], (err, result) => {
     if (err) {
       console.log(err);
@@ -612,7 +612,7 @@ app.post("/studentAttendanceDetails", (req, res) => {
 
   console.log(req.body);
   const sql =
-    "SELECT date_format(date, '%Y-%m-%d') as date, IFNULL(date_format(attendance.time_in, '%h:%m'),'') as time_in, present FROM attendance WHERE course_id = ? AND student_id = ? ORDER BY date";
+    "SELECT date_format(date, '%Y-%m-%d') as date, IFNULL(date_format(attendance.time_in, '%h:%i'),'') as time_in, present FROM attendance WHERE course_id = ? AND student_id = ? ORDER BY date";
   DB_CONN.query(sql, [classId, student_id], (err, result) => {
     if (err) {
       console.log(err);
